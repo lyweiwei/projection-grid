@@ -37,7 +37,7 @@ function defaultsDeep(dest, src) {
 }
 
 function nextTick() {
-  return new Promise((resolve, reject) => window.setTimeout(resolve, 0));
+  return new Promise(_.defer);
 }
 
 class ProjectionChain {
@@ -247,6 +247,7 @@ export class GridView extends Backbone.View {
      */
     const refresh = this.refresh = force => {
       const changes = refreshState.changes;
+      const tableView = this._tableView;
 
       refreshState.changes = null;
 
@@ -268,9 +269,7 @@ export class GridView extends Backbone.View {
         this._chainContent,
       ], (memo, chain) => chain.update(memo, force), null)
         .then(patchEvents)
-        .then(state => new Promise((resolve, reject) => {
-          this._tableView.set(state, resolve);
-        }))
+        .then(state => new Promise(_.bind(tableView.set, tableView, state)))
         .then(nextTick)
         .finally(() => {
           /**
@@ -440,7 +439,7 @@ export class GridView extends Backbone.View {
     this.set(_.reduce(_.keys(state), (memo, key) => {
       const value = state[key];
       const valueCur = this.get(key);
-      
+
       memo[key] = defaultsDeep(value, valueCur);
       return memo;
     }, {}), callback);
